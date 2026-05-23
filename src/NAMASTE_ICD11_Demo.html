@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NAMASTE-ICD11 Demo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0B1120; color: #E2E8F0; font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+
+  /* Header */
+  .header { background: #0D1B2E; border-bottom: 1px solid #1E2D45; padding: 18px 32px; display: flex; align-items: center; gap: 16px; }
+  .logo { width: 42px; height: 42px; border-radius: 10px; background: linear-gradient(135deg,#14B8A6,#0891B2); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+  .title { font-size: 18px; font-weight: 700; }
+  .subtitle { font-size: 11px; color: #64748B; font-family: monospace; margin-top: 2px; }
+  .badges { margin-left: auto; display:flex; gap:8px; }
+  .badge { font-size:10px; padding:3px 8px; border-radius:20px; border:1px solid #14B8A644; color:#14B8A6; font-family:monospace; }
+
+  /* Tabs */
+  .tabs { border-bottom:1px solid #1E2D45; padding:0 32px; display:flex; gap:0; }
+  .tab { background:none; border:none; color:#64748B; border-bottom:2px solid transparent; padding:12px 20px; font-size:13px; font-weight:600; cursor:pointer; font-family:'Segoe UI',sans-serif; transition:all 0.2s; margin-bottom:-1px; }
+  .tab.active { color:#14B8A6; border-bottom-color:#14B8A6; }
+
+  /* Layout */
+  .main { padding:24px 32px; max-width:1100px; margin:0 auto; }
+
+  /* Search box */
+  .searchbox { background:#161F32; border:1px solid #1E2D45; border-radius:12px; padding:16px 20px; margin-bottom:16px; box-shadow:0 4px 24px rgba(0,0,0,0.3); }
+  .search-label { font-size:11px; color:#64748B; font-family:monospace; margin-bottom:8px; }
+  .search-row { display:flex; align-items:center; gap:12px; }
+  .search-input { flex:1; background:none; border:none; outline:none; color:#E2E8F0; font-size:15px; font-family:'Segoe UI',sans-serif; font-weight:500; }
+  .clear-btn { background:none; border:none; color:#64748B; cursor:pointer; font-size:18px; }
+
+  /* Example chips */
+  .examples { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; align-items:center; }
+  .ex-label { font-size:11px; color:#64748B; font-family:monospace; }
+  .chip { background:#1E2D45; border:1px solid #1E2D45; color:#64748B; padding:4px 12px; border-radius:20px; font-size:12px; cursor:pointer; font-family:monospace; transition:all 0.2s; }
+  .chip:hover, .chip.active { background:#14B8A622; border-color:#14B8A6; color:#14B8A6; }
+
+  /* Grid */
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+
+  /* Result cards */
+  .result-card { background:#161F32; border:1px solid #1E2D45; border-radius:10px; padding:14px 16px; margin-bottom:10px; cursor:pointer; transition:all 0.2s; }
+  .result-card:hover { border-color:#14B8A666; }
+  .result-card.selected { background:#14B8A612; border-color:#14B8A6; }
+  .card-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .rank-badge { width:22px; height:22px; border-radius:50%; background:#1E2D45; color:#64748B; font-size:11px; display:flex; align-items:center; justify-content:center; font-weight:700; font-family:monospace; }
+  .selected .rank-badge { background:#14B8A6; color:#000; }
+  .term-name { font-weight:600; font-size:15px; margin-left:8px; }
+  .score { font-size:12px; font-family:monospace; font-weight:600; }
+  .score.high { color:#22C55E; } .score.mid { color:#F59E0B; } .score.low { color:#EF4444; }
+
+  /* Conf bar */
+  .conf-bg { background:#1E2D45; border-radius:4px; height:6px; width:100%; overflow:hidden; margin-bottom:8px; }
+  .conf-fill { height:100%; border-radius:4px; transition:width 0.5s ease; }
+
+  /* Card bottom */
+  .card-bottom { display:flex; justify-content:space-between; }
+  .cat-tag { font-size:11px; font-family:monospace; padding:2px 8px; border-radius:4px; }
+  .icd-code { font-size:11px; font-family:monospace; color:#14B8A6; font-weight:600; }
+
+  /* Detail panel */
+  .detail { background:#161F32; border:1px solid #14B8A644; border-radius:10px; padding:20px; }
+  .icd-badge { display:inline-flex; align-items:center; gap:8px; background:#14B8A618; border:1px solid #14B8A655; border-radius:8px; padding:8px 14px; margin-bottom:16px; }
+  .icd-label { font-size:10px; color:#64748B; font-family:monospace; }
+  .icd-val { font-family:monospace; color:#14B8A6; font-size:18px; font-weight:700; }
+  .detail-term { font-size:17px; font-weight:700; margin-bottom:4px; }
+  .detail-desc { font-size:13px; color:#64748B; margin-bottom:14px; line-height:1.5; }
+  .stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .stat-box { background:#0B1120; border-radius:8px; padding:10px 12px; border:1px solid #1E2D45; }
+  .stat-label { font-size:10px; color:#64748B; font-family:monospace; margin-bottom:3px; }
+  .stat-val { font-size:13px; font-weight:600; }
+
+  /* XAI */
+  .xai-box { background:#0B1120; border-radius:8px; padding:12px; border:1px solid #1E2D45; margin-bottom:16px; }
+  .xai-title { font-size:11px; color:#64748B; font-family:monospace; margin-bottom:8px; }
+  .token-wrap { display:flex; flex-wrap:wrap; gap:6px; }
+  .token { padding:2px 8px; border-radius:4px; font-size:12px; font-family:monospace; }
+  .xai-hint { font-size:10px; color:#64748B; margin-top:8px; font-family:monospace; }
+
+  /* FHIR */
+  .fhir-btn { background:#14B8A618; border:1px solid #14B8A655; color:#14B8A6; padding:8px 16px; border-radius:8px; font-size:12px; font-family:monospace; cursor:pointer; width:100%; margin-bottom:10px; transition:all 0.2s; }
+  .fhir-wrap { position:relative; }
+  .copy-btn { position:absolute; top:8px; right:8px; background:#1E2D45; border:none; color:#fff; padding:4px 10px; border-radius:6px; font-size:11px; cursor:pointer; font-family:monospace; z-index:1; transition:all 0.2s; }
+  .copy-btn.ok { background:#22C55E; }
+  .fhir-pre { background:#07101C; border-radius:8px; padding:16px 14px; font-size:10.5px; font-family:monospace; color:#94A3B8; overflow:auto; max-height:300px; border:1px solid #1E2D45; line-height:1.6; }
+
+  /* Empty state */
+  .empty { text-align:center; padding:48px 0; color:#64748B; }
+  .empty-icon { font-size:40px; margin-bottom:12px; }
+  .empty-text { font-size:14px; font-weight:500; }
+  .empty-sub { font-size:12px; margin-top:6px; font-family:monospace; }
+
+  /* Metrics tab */
+  .metrics-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
+  .metric-card { background:#161F32; border:1px solid #1E2D45; border-radius:12px; padding:20px; text-align:center; }
+  .metric-val { font-size:32px; font-weight:700; color:#14B8A6; font-family:monospace; margin-bottom:4px; }
+  .metric-label { font-size:13px; font-weight:600; margin-bottom:4px; }
+  .metric-sub { font-size:11px; color:#64748B; font-family:monospace; }
+  .section-card { background:#161F32; border:1px solid #1E2D45; border-radius:12px; padding:20px; margin-bottom:16px; }
+  .section-title { font-size:13px; font-weight:600; margin-bottom:14px; }
+  .cat-wrap { display:flex; flex-wrap:wrap; gap:8px; }
+  .arch-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .arch-node { font-family:monospace; font-size:12px; background:#14B8A615; border:1px solid #14B8A633; color:#14B8A6; padding:4px 10px; border-radius:6px; }
+  .arch-arrow { color:#64748B; font-size:16px; }
+  .arch-note { font-size:11px; color:#64748B; margin-top:12px; font-family:monospace; line-height:1.8; }
+
+  /* Footer */
+  .footer { border-top:1px solid #1E2D45; padding:12px 32px; font-size:10px; color:#64748B; font-family:monospace; display:flex; justify-content:space-between; }
+
+  /* Section label */
+  .section-label { font-size:11px; color:#64748B; font-family:monospace; margin-bottom:10px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="logo">🌿</div>
+  <div>
+    <div class="title">NAMASTE-ICD11</div>
+    <div class="subtitle">AYUSH ↔ ICD-11 Hybrid Mapping Framework · TF-IDF Baseline Engine · v1.0</div>
+  </div>
+  <div class="badges">
+    <span class="badge">FHIR R4</span>
+    <span class="badge">XAI</span>
+    <span class="badge">ABHA</span>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('engine', this)">🔍 Mapping Engine</button>
+  <button class="tab" onclick="switchTab('metrics', this)">📊 Benchmark Metrics</button>
+</div>
+
+<!-- Engine Tab -->
+<div id="tab-engine" class="main">
+  <div class="searchbox">
+    <div class="search-label">ENTER AYUSH / AYURVEDIC TERM</div>
+    <div class="search-row">
+      <span>🔍</span>
+      <input class="search-input" id="searchInput" placeholder="e.g., Agnimandya, Jwara, Amavata, asthma, joint pain..." oninput="onSearch(this.value)" />
+      <button class="clear-btn" onclick="clearSearch()" title="Clear">✕</button>
+    </div>
+  </div>
+
+  <div class="examples">
+    <span class="ex-label">TRY:</span>
+    <span class="chip" onclick="setQuery('Agnimandya')">Agnimandya</span>
+    <span class="chip" onclick="setQuery('Jwara')">Jwara</span>
+    <span class="chip" onclick="setQuery('Amavata')">Amavata</span>
+    <span class="chip" onclick="setQuery('Madhumeha')">Madhumeha</span>
+    <span class="chip" onclick="setQuery('Shwasa')">Shwasa</span>
+    <span class="chip" onclick="setQuery('Kamala')">Kamala</span>
+    <span class="chip" onclick="setQuery('joint pain')">joint pain</span>
+  </div>
+
+  <div id="results-area"></div>
+
+  <div id="empty-state" class="empty">
+    <div class="empty-icon">🌿</div>
+    <div class="empty-text">Enter an Ayurvedic term to begin mapping</div>
+    <div class="empty-sub">Supports Sanskrit terms, English equivalents, and symptom descriptions</div>
+  </div>
+</div>
+
+<!-- Metrics Tab -->
+<div id="tab-metrics" class="main" style="display:none">
+  <div style="margin-bottom:20px">
+    <div style="font-size:16px;font-weight:700;margin-bottom:4px">Baseline Evaluation — TF-IDF Engine</div>
+    <div style="font-size:12px;color:#64748B;font-family:monospace">Self-retrieval benchmark · 49 entries · 19 AYUSH categories</div>
+  </div>
+  <div class="metrics-grid">
+    <div class="metric-card"><div class="metric-val">98.0%</div><div class="metric-label">Top-1 Accuracy</div><div class="metric-sub">Self-retrieval benchmark</div></div>
+    <div class="metric-card"><div class="metric-val">100%</div><div class="metric-label">Top-3 Accuracy</div><div class="metric-sub">Self-retrieval benchmark</div></div>
+    <div class="metric-card"><div class="metric-val">0.990</div><div class="metric-label">MRR</div><div class="metric-sub">Mean Reciprocal Rank</div></div>
+    <div class="metric-card"><div class="metric-val">100%</div><div class="metric-label">Coverage</div><div class="metric-sub">All 49 entries mapped</div></div>
+    <div class="metric-card"><div class="metric-val">49</div><div class="metric-label">Dataset Size</div><div class="metric-sub">Entries, 19 categories</div></div>
+    <div class="metric-card"><div class="metric-val">49</div><div class="metric-label">ICD-11 Codes</div><div class="metric-sub">Unique mappings</div></div>
+  </div>
+  <div class="section-card">
+    <div class="section-title">Category Coverage (19 Categories)</div>
+    <div class="cat-wrap" id="cat-wrap"></div>
+  </div>
+  <div class="section-card">
+    <div class="section-title">System Architecture</div>
+    <div class="arch-row">
+      <span class="arch-node">AYUSH Input</span><span class="arch-arrow">→</span>
+      <span class="arch-node">Preprocessor</span><span class="arch-arrow">→</span>
+      <span class="arch-node">TF-IDF Embedder</span><span class="arch-arrow">→</span>
+      <span class="arch-node">Cosine Similarity</span><span class="arch-arrow">→</span>
+      <span class="arch-node">NAMASTEMapper</span><span class="arch-arrow">→</span>
+      <span class="arch-node">FHIR R4 Output</span>
+    </div>
+    <div class="arch-note">
+      Week 1 (Complete): TF-IDF Baseline &nbsp;·&nbsp; Week 2: BioBERT Hybrid Fusion<br>
+      Week 3: SHAP/LIME Explainability &nbsp;·&nbsp; Week 4: Spring Boot + HAPI FHIR API
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div class="footer">
+  <span>NAMASTE-ICD11 · St. Joseph's Institute of Technology · Anna University</span>
+  <span>TF-IDF Baseline Engine · Dataset: 49 entries · ICD-11 Compliant</span>
+</div>
+
+<script>
+// ── Dataset ──────────────────────────────────────────────────────────────────
+const DATASET = [
+  {term:"Agnimandya",synonyms:["digestive weakness","low appetite","mandagni","hypochlorhydria"],icd11:"DA96.Z",description:"Impaired digestive fire / functional dyspepsia",category:"Digestive"},
+  {term:"Arsha",synonyms:["hemorrhoids","piles","rectal bleeding","anal mass"],icd11:"DA95.0",description:"Haemorrhoids / Anorectal varices",category:"Digestive"},
+  {term:"Gulma",synonyms:["abdominal lump","tumour abdomen","intestinal mass"],icd11:"DD90.Z",description:"Abdominal mass / functional GI disorder",category:"Digestive"},
+  {term:"Atisara",synonyms:["diarrhoea","loose stool","frequent bowel","gastroenteritis"],icd11:"DA91.0",description:"Acute / chronic diarrhoea",category:"Digestive"},
+  {term:"Chardi",synonyms:["vomiting","emesis","nausea vomiting","vomiting disorder"],icd11:"MD90.0",description:"Nausea and vomiting",category:"Digestive"},
+  {term:"Kasa",synonyms:["cough","dry cough","chronic cough","respiratory cough"],icd11:"CA20.Z",description:"Cough / upper respiratory disorder",category:"Respiratory"},
+  {term:"Shwasa",synonyms:["asthma","breathlessness","dyspnoea","wheezing"],icd11:"CA21.0",description:"Bronchial asthma / dyspnoea",category:"Respiratory"},
+  {term:"Pratishyaya",synonyms:["rhinitis","cold","nasal discharge","sinusitis"],icd11:"CA08.0",description:"Rhinitis / common cold",category:"Respiratory"},
+  {term:"Hikka",synonyms:["hiccough","hiccups","singultus"],icd11:"MD90.1",description:"Hiccup / hiccoughs",category:"Respiratory"},
+  {term:"Kushtha",synonyms:["skin disease","psoriasis","dermatitis","eczema"],icd11:"EA90.Z",description:"Chronic skin disorder / psoriasis",category:"Skin"},
+  {term:"Vicharchika",synonyms:["eczema","weeping eczema","pruritus","atopic dermatitis"],icd11:"EA80.0",description:"Atopic eczema / dermatitis",category:"Skin"},
+  {term:"Sheetapitta",synonyms:["urticaria","hives","allergic rash","angioedema"],icd11:"EB05.0",description:"Urticaria / allergic reaction",category:"Skin"},
+  {term:"Dadru",synonyms:["ringworm","tinea","fungal infection skin","dermatophytosis"],icd11:"EA70.0",description:"Dermatophytosis / tinea infection",category:"Skin"},
+  {term:"Jwara",synonyms:["fever","pyrexia","high temperature","febrile"],icd11:"MG2A.0",description:"Fever / pyrexia of unknown origin",category:"Fever"},
+  {term:"Vishama Jwara",synonyms:["intermittent fever","malaria","recurrent fever","periodic fever"],icd11:"1F40.Z",description:"Malaria / intermittent fever",category:"Fever"},
+  {term:"Pittaja Jwara",synonyms:["bilious fever","hepatic fever","pitta fever"],icd11:"MG2A.1",description:"Bilious / hepatic fever",category:"Fever"},
+  {term:"Madhumeha",synonyms:["diabetes","diabetes mellitus","glycosuria","sweet urine"],icd11:"5A10.Z",description:"Diabetes mellitus type 2",category:"Metabolic"},
+  {term:"Sthoulya",synonyms:["obesity","overweight","adiposity","medoroga"],icd11:"5B81.Z",description:"Obesity / adiposity",category:"Metabolic"},
+  {term:"Prameha",synonyms:["urinary disorder diabetes","metabolic disorder urine","polyuria"],icd11:"5A00.Z",description:"Diabetes mellitus type 1 / polyuria disorder",category:"Metabolic"},
+  {term:"Amavata",synonyms:["rheumatoid arthritis","joint inflammation","ama joint","autoimmune arthritis"],icd11:"FA20.0",description:"Rheumatoid arthritis",category:"Musculoskeletal"},
+  {term:"Sandhivata",synonyms:["osteoarthritis","degenerative joint","joint pain","cartilage wear"],icd11:"FA01.Z",description:"Osteoarthritis of joint",category:"Musculoskeletal"},
+  {term:"Gridhrasi",synonyms:["sciatica","sciatic nerve pain","lumbar radiculopathy","leg pain nerve"],icd11:"FA84.1",description:"Sciatica / lumbar radiculopathy",category:"Musculoskeletal"},
+  {term:"Katishula",synonyms:["low back pain","lumbar pain","lumbago","backache"],icd11:"ME84.2",description:"Low back pain / lumbago",category:"Musculoskeletal"},
+  {term:"Pandu",synonyms:["anaemia","pallor","iron deficiency","haemoglobin low"],icd11:"3A00.Z",description:"Iron deficiency anaemia / pallor",category:"Haematology"},
+  {term:"Raktapitta",synonyms:["bleeding disorder","haemorrhage","blood vomiting","haemoptysis"],icd11:"MF30.Z",description:"Haemorrhagic disorder / bleeding",category:"Haematology"},
+  {term:"Unmada",synonyms:["psychosis","mental disorder","madness","schizophrenia"],icd11:"6A20.Z",description:"Psychotic disorder / schizophrenia",category:"Mental Health"},
+  {term:"Apasmara",synonyms:["epilepsy","seizure","convulsion","fits"],icd11:"8A60.Z",description:"Epilepsy / seizure disorder",category:"Neurology"},
+  {term:"Ardita",synonyms:["facial palsy","bell palsy","facial paralysis","hemiplegia face"],icd11:"8B82.0",description:"Facial palsy / Bell's palsy",category:"Neurology"},
+  {term:"Pakshaghat",synonyms:["hemiplegia","stroke","paralysis","cerebrovascular"],icd11:"8B20.Z",description:"Hemiplegia / stroke",category:"Neurology"},
+  {term:"Timira",synonyms:["cataract","vision loss","visual impairment","night blindness"],icd11:"9A60.Z",description:"Cataract / visual impairment",category:"Ophthalmology"},
+  {term:"Abhishyanda",synonyms:["conjunctivitis","eye inflammation","pink eye","ocular discharge"],icd11:"9A60.1",description:"Conjunctivitis / ocular inflammation",category:"Ophthalmology"},
+  {term:"Mutrakricha",synonyms:["dysuria","painful urination","urinary tract infection","UTI"],icd11:"MF50.Z",description:"Dysuria / UTI / urinary disorder",category:"Urology"},
+  {term:"Ashmari",synonyms:["kidney stone","urolithiasis","renal calculi","bladder stone"],icd11:"GB90.Z",description:"Urolithiasis / kidney stones",category:"Urology"},
+  {term:"Hridroga",synonyms:["heart disease","cardiac disorder","palpitation","chest pain cardiac"],icd11:"BA80.Z",description:"Cardiac disorder / heart disease",category:"Cardiology"},
+  {term:"Hridaya Shula",synonyms:["angina","chest pain","cardiac pain","myocardial"],icd11:"BA41.Z",description:"Angina pectoris / cardiac chest pain",category:"Cardiology"},
+  {term:"Kamala",synonyms:["jaundice","hepatitis","liver disease","icterus"],icd11:"DC10.Z",description:"Jaundice / hepatic disorder",category:"Hepatology"},
+  {term:"Yakrit Vikara",synonyms:["liver disorder","hepatomegaly","liver enlargement","hepatic failure"],icd11:"DB91.Z",description:"Liver disease / hepatopathy",category:"Hepatology"},
+  {term:"Shiro Ruja",synonyms:["headache","cephalgia","migraine","head pain"],icd11:"8A80.Z",description:"Headache / cephalgia",category:"Neurology"},
+  {term:"Ardhavabhedaka",synonyms:["migraine","hemicrania","one sided headache","hemikrania"],icd11:"8A80.0",description:"Migraine / hemicrania",category:"Neurology"},
+  {term:"Artava Kshaya",synonyms:["oligomenorrhoea","scanty menstruation","hypomenorrhoea","menstrual deficiency"],icd11:"GA20.Z",description:"Oligomenorrhoea / hypomenorrhoea",category:"Gynaecology"},
+  {term:"Pradara",synonyms:["menorrhagia","heavy bleeding","excessive menstruation","metrorrhagia"],icd11:"GA21.Z",description:"Menorrhagia / abnormal uterine bleeding",category:"Gynaecology"},
+  {term:"Yoni Vyapat",synonyms:["vaginal disorder","vulvovaginitis","leucorrhoea","vaginal discharge"],icd11:"GA30.Z",description:"Vulvovaginal disorder / leucorrhoea",category:"Gynaecology"},
+  {term:"Galashotha",synonyms:["pharyngitis","throat inflammation","sore throat","tonsillitis"],icd11:"CA02.Z",description:"Pharyngitis / throat inflammation",category:"ENT"},
+  {term:"Karna Shula",synonyms:["earache","otitis","ear pain","otalgia"],icd11:"AA02.Z",description:"Otalgia / earache / otitis",category:"ENT"},
+  {term:"Balapaksha",synonyms:["childhood fever","paediatric fever","infantile fever"],icd11:"MG2A.2",description:"Paediatric fever disorder",category:"Paediatrics"},
+  {term:"Phakka",synonyms:["rickets","vitamin D deficiency","bone weakness child","marasmus"],icd11:"5B55.Z",description:"Rickets / vitamin D deficiency disorder",category:"Paediatrics"},
+  {term:"Vrana",synonyms:["wound","ulcer","non healing ulcer","chronic wound"],icd11:"EH90.Z",description:"Wound / chronic ulcer",category:"Surgical"},
+  {term:"Bhagna",synonyms:["fracture","bone fracture","broken bone","traumatic fracture"],icd11:"NA10.Z",description:"Fracture / bone injury",category:"Surgical"},
+];
+
+const CAT_COLORS = {
+  Digestive:"#F59E0B",Respiratory:"#60A5FA",Skin:"#A78BFA",Fever:"#F87171",
+  Metabolic:"#34D399",Musculoskeletal:"#FB923C",Haematology:"#F472B6",
+  "Mental Health":"#818CF8",Neurology:"#38BDF8",Ophthalmology:"#4ADE80",
+  Urology:"#FACC15",Cardiology:"#FB7185",Hepatology:"#FCA5A5",
+  Gynaecology:"#E879F9",ENT:"#67E8F9",Paediatrics:"#86EFAC",Surgical:"#FCD34D"
+};
+
+// ── TF-IDF ───────────────────────────────────────────────────────────────────
+function tokenize(text){ return text.toLowerCase().replace(/[^a-z0-9\s]/g,'').split(/\s+/).filter(Boolean); }
+
+const CORPUS = DATASET.map(d=>[d.term,...d.synonyms,d.description].join(' ').toLowerCase());
+
+function computeIDF(corpus){
+  const df={};
+  corpus.forEach(doc=>{ const tokens=new Set(tokenize(doc)); tokens.forEach(t=>{ df[t]=(df[t]||0)+1; }); });
+  const idf={};
+  Object.keys(df).forEach(t=>{ idf[t]=Math.log((corpus.length+1)/(df[t]+1))+1; });
+  return idf;
+}
+
+function tfVec(doc,idf){
+  const tokens=tokenize(doc); const tf={};
+  tokens.forEach(t=>{ tf[t]=(tf[t]||0)+1; });
+  const vec={};
+  Object.keys(tf).forEach(t=>{ vec[t]=(tf[t]/tokens.length)*(idf[t]||Math.log(2)); });
+  return vec;
+}
+
+function cosSim(a,b){
+  const keys=new Set([...Object.keys(a),...Object.keys(b)]);
+  let dot=0,na=0,nb=0;
+  keys.forEach(k=>{ dot+=(a[k]||0)*(b[k]||0); na+=(a[k]||0)**2; nb+=(b[k]||0)**2; });
+  return na&&nb?dot/(Math.sqrt(na)*Math.sqrt(nb)):0;
+}
+
+const IDF = computeIDF(CORPUS);
+const DOC_VECS = CORPUS.map(doc=>tfVec(doc,IDF));
+
+function doSearch(query,k=5){
+  if(!query.trim()) return [];
+  const qVec=tfVec(query,IDF);
+  const qTokens=tokenize(query);
+  return DATASET.map((entry,i)=>{
+    const sim=cosSim(qVec,DOC_VECS[i]);
+    const tokenWeights={};
+    qTokens.forEach(t=>{ tokenWeights[t]=(qVec[t]||0)*(DOC_VECS[i][t]||0); });
+    return {entry,sim,tokenWeights};
+  }).sort((a,b)=>b.sim-a.sim).slice(0,k);
+}
+
+// ── FHIR ─────────────────────────────────────────────────────────────────────
+function fhirJSON(result){
+  return JSON.stringify({
+    resourceType:"Condition",
+    id:`ayush-${result.entry.icd11.replace(/\./g,'-').toLowerCase()}`,
+    meta:{profile:["http://hl7.org/fhir/StructureDefinition/Condition"]},
+    clinicalStatus:{coding:[{system:"http://terminology.hl7.org/CodeSystem/condition-clinical",code:"active"}]},
+    code:{
+      coding:[
+        {system:"http://id.who.int/icd/release/11/mms",code:result.entry.icd11,display:result.entry.description},
+        {system:"http://ayush.gov.in/terminology",code:result.entry.term.replace(/\s+/g,'_').toLowerCase(),display:result.entry.term}
+      ],text:result.entry.term
+    },
+    subject:{reference:"Patient/namaste-patient-001"},
+    recordedDate:new Date().toISOString(),
+    extension:[
+      {url:"http://namaste-icd11.ai/confidence",valueDecimal:parseFloat(result.sim.toFixed(4))},
+      {url:"http://namaste-icd11.ai/ayush-category",valueString:result.entry.category}
+    ]
+  },null,2);
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentResults=[], selectedIdx=0, fhirVisible=false, searchTimer=null;
+
+function onSearch(val){
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(()=>{ runSearch(val); },200);
+}
+
+function runSearch(query){
+  const results=doSearch(query,5);
+  currentResults=results; selectedIdx=0; fhirVisible=false;
+  renderResults(query);
+}
+
+function setQuery(val){
+  document.getElementById('searchInput').value=val;
+  runSearch(val);
+  // update chips
+  document.querySelectorAll('.chip').forEach(c=>{ c.classList.toggle('active',c.textContent===val); });
+}
+
+function clearSearch(){
+  document.getElementById('searchInput').value='';
+  currentResults=[]; selectedIdx=0;
+  renderResults('');
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+}
+
+function selectResult(idx){
+  selectedIdx=idx; fhirVisible=false;
+  renderResults(document.getElementById('searchInput').value);
+}
+
+function toggleFhir(){
+  fhirVisible=!fhirVisible;
+  renderResults(document.getElementById('searchInput').value);
+}
+
+function copyFhir(){
+  if(!currentResults.length) return;
+  navigator.clipboard.writeText(fhirJSON(currentResults[selectedIdx])).then(()=>{
+    const btn=document.getElementById('copyBtn');
+    btn.textContent='✓ Copied'; btn.classList.add('ok');
+    setTimeout(()=>{ btn.textContent='Copy'; btn.classList.remove('ok'); },2000);
+  });
+}
+
+function renderResults(query){
+  const area=document.getElementById('results-area');
+  const empty=document.getElementById('empty-state');
+  if(!query.trim()||!currentResults.length){ area.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display='none';
+
+  const topScore=currentResults[0]?.sim||0;
+  const selected=currentResults[selectedIdx];
+
+  let leftHTML='<div class="section-label">TOP '+currentResults.length+' MATCHES</div>';
+  currentResults.forEach((r,i)=>{
+    const pct=topScore>0?(r.sim/topScore)*100:0;
+    const scoreClass=r.sim>0.5?'high':r.sim>0.25?'mid':'low';
+    const catColor=CAT_COLORS[r.entry.category]||'#14B8A6';
+    const isSelected=i===selectedIdx;
+    leftHTML+=`<div class="result-card${isSelected?' selected':''}" onclick="selectResult(${i})">
+      <div class="card-top">
+        <div style="display:flex;align-items:center">
+          <span class="rank-badge">#${i+1}</span>
+          <span class="term-name">${r.entry.term}</span>
+        </div>
+        <span class="score ${scoreClass}">${(r.sim*100).toFixed(1)}%</span>
+      </div>
+      <div class="conf-bg"><div class="conf-fill" style="width:${pct}%;background:${r.sim>0.5?'#22C55E':r.sim>0.25?'#F59E0B':'#EF4444'}"></div></div>
+      <div class="card-bottom">
+        <span class="cat-tag" style="background:${catColor}22;color:${catColor};border:1px solid ${catColor}44">${r.entry.category}</span>
+        <span class="icd-code">${r.entry.icd11}</span>
+      </div>
+    </div>`;
+  });
+
+  // Token heatmap
+  const qTokens=tokenize(query);
+  const maxW=Math.max(...Object.values(selected.tokenWeights),0.0001);
+  let tokensHTML='<div class="token-wrap">';
+  qTokens.forEach(t=>{
+    const w=selected.tokenWeights[t]||0;
+    const alpha=0.15+0.85*(w/maxW);
+    const textColor=alpha>0.5?'#fff':'#64748B';
+    const wLabel=w>0.001?`<span style="font-size:9px;margin-left:4px;opacity:0.7">${(w*1000).toFixed(1)}</span>`:'';
+    tokensHTML+=`<span class="token" style="background:rgba(20,184,166,${alpha});color:${textColor};border:1px solid rgba(20,184,166,${alpha*0.5})">${t}${wLabel}</span>`;
+  });
+  tokensHTML+='</div><div class="xai-hint">Brighter = higher TF-IDF contribution to match score</div>';
+
+  // FHIR section
+  const fhirSection=fhirVisible?`
+    <div class="fhir-wrap">
+      <button class="copy-btn" id="copyBtn" onclick="copyFhir()">Copy</button>
+      <pre class="fhir-pre">${escapeHTML(fhirJSON(selected))}</pre>
+    </div>`:'' ;
+
+  let rightHTML=`<div class="detail">
+    <div class="icd-badge"><span class="icd-label">ICD-11</span><span class="icd-val">${selected.entry.icd11}</span></div>
+    <div class="detail-term">${selected.entry.term}</div>
+    <div class="detail-desc">${selected.entry.description}</div>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="stat-label">CONFIDENCE</div><div class="stat-val" style="color:${selected.sim>0.5?'#22C55E':selected.sim>0.25?'#F59E0B':'#EF4444'}">${(selected.sim*100).toFixed(2)}%</div></div>
+      <div class="stat-box"><div class="stat-label">CATEGORY</div><div class="stat-val">${selected.entry.category}</div></div>
+      <div class="stat-box"><div class="stat-label">SYNONYMS</div><div class="stat-val">${selected.entry.synonyms.length} terms</div></div>
+      <div class="stat-box"><div class="stat-label">RANK</div><div class="stat-val">#${selectedIdx+1} of ${currentResults.length}</div></div>
+    </div>
+    <div class="xai-box">
+      <div class="xai-title">⚡ XAI — TOKEN CONTRIBUTION HEATMAP</div>
+      ${tokensHTML}
+    </div>
+    <button class="fhir-btn" onclick="toggleFhir()">${fhirVisible?'▲ Hide':'▼ Show'} FHIR R4 Resource</button>
+    ${fhirSection}
+  </div>`;
+
+  area.innerHTML=`<div class="grid"><div>${leftHTML}</div><div><div class="section-label">MATCH DETAIL</div>${rightHTML}</div></div>`;
+}
+
+function escapeHTML(str){ return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(name, btn){
+  document.getElementById('tab-engine').style.display = name==='engine'?'block':'none';
+  document.getElementById('tab-metrics').style.display = name==='metrics'?'block':'none';
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ── Render category breakdown on metrics tab ──────────────────────────────────
+(function renderCats(){
+  const counts={};
+  DATASET.forEach(d=>{ counts[d.category]=(counts[d.category]||0)+1; });
+  const wrap=document.getElementById('cat-wrap');
+  Object.entries(counts).forEach(([cat,count])=>{
+    const color=CAT_COLORS[cat]||'#14B8A6';
+    wrap.innerHTML+=`<div style="background:${color}18;border:1px solid ${color}44;border-radius:8px;padding:8px 14px;display:flex;align-items:center;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:${color}">${cat}</span>
+      <span style="background:${color}44;border-radius:20px;padding:1px 8px;font-size:11px;color:${color};font-family:monospace">${count}</span>
+    </div>`;
+  });
+})();
+</script>
+</body>
+</html>
